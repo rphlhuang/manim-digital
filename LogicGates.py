@@ -1,6 +1,5 @@
 from manim import *
 
-
 class Gate(Group):
     def __init__(self, label=""):
         super().__init__()
@@ -10,6 +9,28 @@ class Gate(Group):
     # method to glue a component to the gate
     def glue(self, component):
         self.add(component)
+
+    # method to uncreate all components of the gate (including glued components)
+    def uncreate_all(self):
+        animations = []
+        for component in self.submobjects:
+            try:
+                # try to use Uncreate or Unwrite depending on the component type
+                if isinstance(component, Text):
+                    animations.append(Unwrite(component))
+                else:
+                    animations.append(Uncreate(component))
+            except AttributeError:
+                print(f"Warning: {component} cannot be uncreated or unwritten.")
+                pass  # skip components that don't support these animations
+        return animations
+
+    # method to animate the creation of all components at once
+    def animate_create(self, scene):
+        animations = self.get_create_animations()  # call the child's get_create_animations
+        scene.play(*animations)  # unpack and play all animations simultaneously
+        
+
 
 class AndGate(Gate):
     def __init__(self, label=""):
