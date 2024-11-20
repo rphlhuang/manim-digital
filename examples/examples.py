@@ -5,8 +5,6 @@ from LogicGates import *
 
 from manim import *
 
-
-
 class Test(Scene):
     config.background_color = BLACK
     def construct(self):

@@ -7,9 +7,8 @@ class Gate(Group):
         self.label = label
         self.text = Text(label).shift(DOWN * 2)
 
-    # Method to glue a component to the gate
+    # method to glue a component to the gate
     def glue(self, component):
-        # Add the component to the group so it stays with the gate
         self.add(component)
 
 class AndGate(Gate):
