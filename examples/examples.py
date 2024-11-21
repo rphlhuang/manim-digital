@@ -88,3 +88,59 @@ class NetTest(Scene):
         net.propagate()
 
         self.wait(2)
+
+class ThroughTest(Scene):
+    def construct(self):
+
+        and_gate = AndGate("AND")
+
+        # net 1
+        wire1a = Wire(start=[-5, 0.7, 0], end=[-3, 0.7, 0], abs_end=True)
+        wire1b = Wire(start=[-3, 0.7, 0], end=and_gate.get_input_a(), abs_end=True)
+        net1 = Net()
+        net1.add_wire(wire1a)
+        net1.add_wire(wire1b)
+
+        # net 2
+        wire2 = Wire(start=[-3, -0.7, 0], end=and_gate.get_input_b(), abs_end=True)
+        net2 = Net()
+        net2.add_wire(wire2)
+
+        # net 3
+        wire_out = Wire(start=and_gate.get_output(), end=[3, 0, 0])
+        net3 = Net()
+        net3.add_wire(wire_out)
+
+        and_gate.add_input_wire(wire1b)
+        and_gate.add_input_wire(wire2)
+        and_gate.add_output_wire(wire_out)
+
+        # play create
+        self.play(and_gate.create())
+        self.wait(0.5)
+        self.play(net1.create(), net2.create(), net3.create())
+        self.wait(0.5)
+
+        # propagate logic
+        wire1a.set_state(1)
+        wire2.set_state(0)
+        net1.propagate_through(wire1a)
+        self.wait(0.75)
+
+        wire2.set_state(1)
+        net2.propagate_through(wire2)
+        self.wait(0.75)
+
+        wire1a.set_state(0)
+        net1.propagate_through(wire1a)
+        self.wait(0.75)
+
+        wire2.set_state(0)
+        net2.propagate_through(wire2)
+        self.wait(1)
+
+        # play uncreate
+        self.play(and_gate.uncreate())
+        self.wait(1)
+        self.play(net1.uncreate(), net2.uncreate(), net3.uncreate())
+        self.wait(2)

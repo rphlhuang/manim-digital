@@ -6,10 +6,8 @@ OR_GATE_PROPAGATION_DELAY = 0.1
 # Wire: Line, but with end defaulting to be relative to start
 class Wire(Line):
     def __init__(self, start, end, abs_end=False, allow_diagonal=False, allow_any_angle=False):
-       
         # default to relative end point
         end_point = [sum(x) for x in zip(start, end)]
-        # use absolute end point if specified
         if abs_end:
             end_point = end
 
@@ -19,15 +17,16 @@ class Wire(Line):
 
         if not allow_diagonal and not allow_any_angle:
             if dx != 0 and dy != 0:
-                raise ValueError("Wire can only be horizontal or vertical unless allow_diagonal or allow_any_angle is True. Got start = {}, end = {}, dx = {}, dy = {}".format(start, end_point, dx, dy))
+                raise ValueError("Wire can only be horizontal or vertical unless allow_diagonal or allow_any_angle is True.")
         elif (abs(dx) != abs(dy)) and (dx != 0) and (dy != 0) and not allow_any_angle:
-            raise ValueError("Wire must be horizontal, vertical, or at 45-degree increments, unless allow_any_angle is True. Got start = {}, end = {}, dx = {}, dy = {}".format(start, end_point, dx, dy))
+            raise ValueError("Wire must be horizontal, vertical, or at 45-degree increments, unless allow_any_angle is True.")
 
         super().__init__(start=start, end=end_point)
         self.state = 0  # logical low and high
         self.abs_start = start
         self.abs_end = end_point
-        self.update_color()
+        self.connected_gate_input = None  # gate this wire is an input to
+        self.connected_gate_output = None  # gate this wire is an output from
 
     def set_state(self, state):
         self.state = state
@@ -36,13 +35,11 @@ class Wire(Line):
     def update_color(self):
         self.set_color(RED if self.state else WHITE)
 
-    def propagate(self):
-        # propagate state to connected wires
-        if hasattr(self, "connected_wires"):
-            print("    connected_wires:", self.connected_wires)
-            for wire in self.connected_wires:
-                wire.set_state(self.state)
-                wire.update_color()
+    def connect_to_gate_input(self, gate):
+        self.connected_gate_input = gate
+
+    def connect_to_gate_output(self, gate):
+        self.connected_gate_output = gate
 
 # Net: Group of Wire objects that share a common state
 class Net(Group):
@@ -55,37 +52,29 @@ class Net(Group):
             raise ValueError("Only Wire objects can be added to a Net.")
         self.wires.append(wire)
         self.add(wire)
-        wire.connected_wires = self.get_connected_wires(wire)
 
-        self.update_all_connections()
-
-    def update_all_connections(self):
-        # Update the connected_wires attribute for all wires
-        for wire in self.wires:
-            wire.connected_wires = self.get_connected_wires(wire)
-
-    def get_connected_wires(self, wire):
-        # find wires that share start or end points
-        connected = []
-        for other_wire in self.wires:
-            print(f"    Checking {wire} against {other_wire}")
-            if wire == other_wire:
-                continue
-            if (wire.abs_start == other_wire.abs_start or
-                wire.abs_start == other_wire.abs_end or
-                wire.abs_end == other_wire.abs_start or
-                wire.abs_end == other_wire.abs_end):
-                connected.append(other_wire)
-        return connected
-    
     def create(self):
         return [Create(wire) for wire in self.wires]
 
-    def propagate(self):
-        # propagate state across the entire net
+    def propagate(self, input_wire):
+        # propagate the state from the input_wire to all wires in the Net
+        if input_wire not in self.wires:
+            raise ValueError("The selected input wire is not part of this Net.")
         for wire in self.wires:
-            print(f"Propagating state {wire.state} across wire {wire}")
-            wire.propagate()
+            wire.set_state(input_wire.state)
+
+    def propagate_through(self, input_wire):
+        # propagate the state through the Net and cascade to connected Gates
+        self.propagate(input_wire)
+        for wire in self.wires:
+            # cascade propagation through gates if connected
+            if wire.connected_gate_input:
+                print(f"Propagating wire {wire.abs_start}, {wire.abs_end}, through {wire.connected_gate_input}")
+                wire.connected_gate_input.propagate_through()
+
+    def uncreate(self):
+        return [Uncreate(wire) for wire in self.wires]
+
 
 # Gate: abstract logic gate
 class Gate(Group):
@@ -104,11 +93,13 @@ class Gate(Group):
     def add_input_wire(self, wire):
         self.input_wires.append(wire)
         self.add(wire)
+        wire.connect_to_gate_input(self)
 
     # method to attach the output wire
     def add_output_wire(self, wire):
         self.output_wire = wire
         self.add(wire)
+        wire.connect_to_gate_output(self)
 
     # method to uncreate all components of the gate (including glued components)
     def uncreate(self):
@@ -124,8 +115,15 @@ class Gate(Group):
                 pass  # skip components that don't support these animations
         return animations
     
-    def propagate(self):
+    def propagate(self, scene):
         pass
+
+    def propagate_through(self):
+        self.propagate()  # first, propagate within the gate
+        if self.output_wire:
+            # if the output wire is connected to another Net, propagate further
+            if hasattr(self.output_wire, "connected_net"):
+                self.output_wire.connected_net.propagate_through()
 
 # AndGate: a group of components that represent an AND gate
 #          (inherits from Gate)
@@ -166,8 +164,7 @@ class AndGate(Gate):
             Create(self.and_ver)
         ]
     
-    def propagate(self, scene):
-        scene.wait(AND_GATE_PROPAGATION_DELAY)
+    def propagate(self):
         if self.input_wires and self.output_wire:
             result = all(wire.state for wire in self.input_wires)
             self.output_wire.set_state(int(result))
@@ -208,8 +205,7 @@ class OrGate(Gate):
             Create(self.or_leftarc)
         ]
     
-    def propagate(self, scene):
-        scene.wait(OR_GATE_PROPAGATION_DELAY)
+    def propagate(self):
         if self.input_wires and self.output_wire:
             result = any(wire.state for wire in self.input_wires)
             self.output_wire.set_state(int(result))
