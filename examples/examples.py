@@ -36,10 +36,12 @@ class Test(Scene):
 
 class PropagationTest(Scene):
     def construct(self):
-        and_gate = AndGate("AND")
+        and_gate = AndGate()
+        or_gate = OrGate().shift([4, -1, 0])
         inputA = Wire(start=and_gate.get_input_a(), end=[-2, 0, 0])
         inputB = Wire(start=and_gate.get_input_b(), end=[-2, 0, 0])
-        output = Wire(start=and_gate.get_output(), end=[2, 0, 0])
+        output = Wire(start=and_gate.get_output(), end=[2, 0, 0], abs_end=False)
+
 
         and_gate.add_input_wire(inputA)
         and_gate.add_input_wire(inputB)
@@ -66,4 +68,23 @@ class PropagationTest(Scene):
         self.wait(1)
 
         self.play(and_gate.uncreate())
+        self.wait(2)
+
+class NetTest(Scene):
+    def construct(self):
+        wire1 = Wire(start=[0, 0, 0], end=[2, 0, 0])
+        wire2 = Wire(start=[2, 0, 0], end=[4, 0, 0])
+        wire3 = Wire(start=[2, 0, 0], end=[2, 2, 0], allow_diagonal=True)
+
+        net = Net()
+        net.add_wire(wire1)
+        net.add_wire(wire2)
+        net.add_wire(wire3)
+
+        self.play(net.create())
+
+        wire1.set_state(1)
+        self.wait(1)
+        net.propagate()
+
         self.wait(2)

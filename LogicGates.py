@@ -1,16 +1,32 @@
 from manim import *
 
 AND_GATE_PROPAGATION_DELAY = 0.1
-OR_GATE_PROPAGATION_DELAY = 0.05
+OR_GATE_PROPAGATION_DELAY = 0.1
 
 # Wire: Line, but with end defaulting to be relative to start
 class Wire(Line):
-    def __init__(self, start, end, abs_end=None):
+    def __init__(self, start, end, abs_end=False, allow_diagonal=False, allow_any_angle=False):
+       
+        # default to relative end point
         end_point = [sum(x) for x in zip(start, end)]
-        if (abs_end != None):
-            end_point = abs_end
+        # use absolute end point if specified
+        if abs_end:
+            end_point = end
+
+        # restrict to horizontal, vertical, or 45-degree increments
+        dx = end_point[0] - start[0]
+        dy = end_point[1] - start[1]
+
+        if not allow_diagonal and not allow_any_angle:
+            if dx != 0 and dy != 0:
+                raise ValueError("Wire can only be horizontal or vertical unless allow_diagonal or allow_any_angle is True. Got start = {}, end = {}, dx = {}, dy = {}".format(start, end_point, dx, dy))
+        elif (abs(dx) != abs(dy)) and (dx != 0) and (dy != 0) and not allow_any_angle:
+            raise ValueError("Wire must be horizontal, vertical, or at 45-degree increments, unless allow_any_angle is True. Got start = {}, end = {}, dx = {}, dy = {}".format(start, end_point, dx, dy))
+
         super().__init__(start=start, end=end_point)
-        self.state = 0  # 0 for low, 1 for high
+        self.state = 0  # logical low and high
+        self.abs_start = start
+        self.abs_end = end_point
         self.update_color()
 
     def set_state(self, state):
@@ -19,6 +35,57 @@ class Wire(Line):
 
     def update_color(self):
         self.set_color(RED if self.state else WHITE)
+
+    def propagate(self):
+        # propagate state to connected wires
+        if hasattr(self, "connected_wires"):
+            print("    connected_wires:", self.connected_wires)
+            for wire in self.connected_wires:
+                wire.set_state(self.state)
+                wire.update_color()
+
+# Net: Group of Wire objects that share a common state
+class Net(Group):
+    def __init__(self):
+        super().__init__()
+        self.wires = []
+
+    def add_wire(self, wire):
+        if not isinstance(wire, Wire):
+            raise ValueError("Only Wire objects can be added to a Net.")
+        self.wires.append(wire)
+        self.add(wire)
+        wire.connected_wires = self.get_connected_wires(wire)
+
+        self.update_all_connections()
+
+    def update_all_connections(self):
+        # Update the connected_wires attribute for all wires
+        for wire in self.wires:
+            wire.connected_wires = self.get_connected_wires(wire)
+
+    def get_connected_wires(self, wire):
+        # find wires that share start or end points
+        connected = []
+        for other_wire in self.wires:
+            print(f"    Checking {wire} against {other_wire}")
+            if wire == other_wire:
+                continue
+            if (wire.abs_start == other_wire.abs_start or
+                wire.abs_start == other_wire.abs_end or
+                wire.abs_end == other_wire.abs_start or
+                wire.abs_end == other_wire.abs_end):
+                connected.append(other_wire)
+        return connected
+    
+    def create(self):
+        return [Create(wire) for wire in self.wires]
+
+    def propagate(self):
+        # propagate state across the entire net
+        for wire in self.wires:
+            print(f"Propagating state {wire.state} across wire {wire}")
+            wire.propagate()
 
 # Gate: abstract logic gate
 class Gate(Group):
@@ -147,6 +214,7 @@ class OrGate(Gate):
             result = any(wire.state for wire in self.input_wires)
             self.output_wire.set_state(int(result))
 
+# TODO: make group of wires class: Net, add methods to set state of all wires. add atrributes to Wires to track begin and end points
 # TODO: add more gates (e.g. XOR, NAND, NOR, etc.)
 # TODO: add flip-flops, registers, etc.
 # TODO: make gates customizable (e.g. NOT bubbles, flipped, etc.)
