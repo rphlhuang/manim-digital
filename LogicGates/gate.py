@@ -17,6 +17,8 @@ class Gate(Group):
         wire.connect_to_gate_input(self)
 
     def add_output_wire(self, wire):
+        if self.output_wire is not None:
+            raise ValueError("Output wire already exists for this gate.")
         self.output_wire = wire
         self.add(wire)
         wire.connect_to_gate_output(self)
