@@ -2,6 +2,7 @@ from manim import *
 
 AND_GATE_PROPAGATION_DELAY = 0.1
 OR_GATE_PROPAGATION_DELAY = 0.1
+EPSILON = 0.00001
 
 # Wire: Line, but with end defaulting to be relative to start
 class Wire(Line):
@@ -9,17 +10,21 @@ class Wire(Line):
         # default to relative end point
         end_point = [sum(x) for x in zip(start, end)]
         if abs_end:
+            actual_start = [end[i] + start[i] for i in range(len(end))]
             end_point = end
+            start = actual_start
 
         # restrict to horizontal, vertical, or 45-degree increments
         dx = end_point[0] - start[0]
         dy = end_point[1] - start[1]
 
         if not allow_diagonal and not allow_any_angle:
-            if dx != 0 and dy != 0:
-                raise ValueError("Wire can only be horizontal or vertical unless allow_diagonal or allow_any_angle is True.")
+            if dx > EPSILON and dy > EPSILON:
+                raise ValueError(f"""Wire can only be horizontal or vertical unless allow_diagonal or allow_any_angle is True.
+                Currently, dx = {dx}, dy = {dy}, with points {start} and {end_point}.""")
         elif (abs(dx) != abs(dy)) and (dx != 0) and (dy != 0) and not allow_any_angle:
-            raise ValueError("Wire must be horizontal, vertical, or at 45-degree increments, unless allow_any_angle is True.")
+            raise ValueError(f"""Wire must be horizontal, vertical, or at 45-degree increments, unless allow_any_angle is True.
+            Currently, dx = {dx}, dy = {dy}, with points {start} and {end_point}.""")
 
         super().__init__(start=start, end=end_point)
         self.state = 0  # logical low and high
@@ -101,6 +106,15 @@ class Gate(Group):
         self.add(wire)
         wire.connect_to_gate_output(self)
 
+    # method to collects Create animations for all wires that have been attached
+    def get_glued_create_animations(self):
+        animations = []
+        for wire in self.input_wires:
+            animations.append(Create(wire))
+        if self.output_wire:
+            animations.append(Create(self.output_wire))
+        return animations
+
     # method to uncreate all components of the gate (including glued components)
     def uncreate(self):
         animations = []
@@ -115,7 +129,7 @@ class Gate(Group):
                 pass  # skip components that don't support these animations
         return animations
     
-    def propagate(self, scene):
+    def propagate(self):
         pass
 
     def propagate_through(self):
@@ -153,6 +167,14 @@ class AndGate(Gate):
 
     def get_output(self):
         return self.output
+    
+    # override shift method to shift wire attachment points
+    def shift(self, *vectors):
+        super().shift(*vectors)
+        self.input_a = [sum(x) for x in zip(self.input_a, vectors[0])]
+        self.input_b = [sum(x) for x in zip(self.input_b, vectors[0])]
+        self.output = [sum(x) for x in zip(self.output, vectors[0])]
+        return self
 
     # getter for animating Create() on the AND gate
     def create(self):
@@ -162,7 +184,7 @@ class AndGate(Gate):
             Create(self.and_arc),
             Create(self.and_lowhor),
             Create(self.and_ver)
-        ]
+        ] + self.get_glued_create_animations()
     
     def propagate(self):
         if self.input_wires and self.output_wire:
@@ -185,6 +207,14 @@ class OrGate(Gate):
 
         # add all components to the group
         self.add(self.or_uparc, self.or_lowarc, self.or_leftarc, self.text)
+    
+    # override shift method to shift wire attachment points
+    def shift(self, *vectors):
+        super().shift(*vectors)
+        self.input_a = [sum(x) for x in zip(self.input_a, vectors[0])]
+        self.input_b = [sum(x) for x in zip(self.input_b, vectors[0])]
+        self.output = [sum(x) for x in zip(self.output, vectors[0])]
+        return self
 
     # getters for the wire attachment points
     def get_input_a(self):
@@ -203,7 +233,7 @@ class OrGate(Gate):
             Write(self.text),
             Create(self.or_lowarc),
             Create(self.or_leftarc)
-        ]
+        ] + self.get_glued_create_animations()
     
     def propagate(self):
         if self.input_wires and self.output_wire:

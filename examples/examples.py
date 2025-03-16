@@ -5,8 +5,7 @@ from LogicGates import *
 
 from manim import *
 
-class Test(Scene):
-    config.background_color = BLACK
+class CreateTest(Scene):
     def construct(self):
         andgate1 = AndGate(label="AND")
         self.play(andgate1.create())
@@ -52,19 +51,19 @@ class PropagationTest(Scene):
 
         inputA.set_state(1)
         inputB.set_state(0)
-        and_gate.propagate(self)
+        and_gate.propagate()
         self.wait(1)
 
         inputB.set_state(1)
-        and_gate.propagate(self)
+        and_gate.propagate()
         self.wait(1)
 
         inputA.set_state(0)
-        and_gate.propagate(self)
+        and_gate.propagate()
         self.wait(1)
 
         inputB.set_state(0)
-        and_gate.propagate(self)
+        and_gate.propagate()
         self.wait(1)
 
         self.play(and_gate.uncreate())
@@ -85,7 +84,7 @@ class NetTest(Scene):
 
         wire1.set_state(1)
         self.wait(1)
-        net.propagate()
+        net.propagate(wire1)
 
         self.wait(2)
 
@@ -93,6 +92,7 @@ class ThroughTest(Scene):
     def construct(self):
 
         and_gate = AndGate("AND")
+        or_gate = OrGate("OR").shift([4, -0.7, 0])
 
         # net 1
         wire1a = Wire(start=[-5, 0.7, 0], end=[-3, 0.7, 0], abs_end=True)
@@ -107,18 +107,32 @@ class ThroughTest(Scene):
         net2.add_wire(wire2)
 
         # net 3
-        wire_out = Wire(start=and_gate.get_output(), end=[3, 0, 0])
+        wire_out = Wire(start=and_gate.get_output(), end=or_gate.get_input_a(), abs_end=True)
         net3 = Net()
         net3.add_wire(wire_out)
+
+        # net 4
+        wire_out_2 = Wire(start=and_gate.get_output(), end=[3, 0, 0])
+        net4 = Net()
+        net4.add_wire(wire_out_2)
+
+        # net 5
+        wire3 = Wire(start=[-2, -1.4, 0], end=or_gate.get_input_b(), abs_end=True)
+        net5 = Net()
+        net5.add_wire(wire3)
 
         and_gate.add_input_wire(wire1b)
         and_gate.add_input_wire(wire2)
         and_gate.add_output_wire(wire_out)
 
+        or_gate.add_input_wire(wire_out)
+        or_gate.add_input_wire(wire3)
+        or_gate.add_output_wire(wire_out_2)
+
         # play create
-        self.play(and_gate.create())
+        self.play(and_gate.create(), or_gate.create())
         self.wait(0.5)
-        self.play(net1.create(), net2.create(), net3.create())
+        self.play(net1.create(), net2.create(), net3.create(), net4.create(), net5.create())
         self.wait(0.5)
 
         # propagate logic
@@ -140,7 +154,20 @@ class ThroughTest(Scene):
         self.wait(1)
 
         # play uncreate
-        self.play(and_gate.uncreate())
+        self.play(and_gate.uncreate(), or_gate.uncreate())
         self.wait(1)
-        self.play(net1.uncreate(), net2.uncreate(), net3.uncreate())
+        self.play(net1.uncreate(), net2.uncreate(), net3.uncreate(), net4.uncreate(), net5.uncreate())
+        self.wait(2)
+
+class TempTest(Scene):
+    def construct(self):
+        and_gate = AndGate("AND")
+        or_gate = OrGate("OR").shift([4, -1.7, 0])
+
+        # play create
+        self.play(and_gate.create(), or_gate.create())
+        self.wait(0.5)
+        1
+        # play uncreate
+        self.play(and_gate.uncreate(), or_gate.uncreate())
         self.wait(2)
