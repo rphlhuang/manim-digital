@@ -165,3 +165,5 @@ self.wait(0.75) # manim is greedy with the animation cut-off point;
 - Additional gate types (e.g., XOR, NAND, NOR).
 - Extended logic propagation through complex circuits.
 - Customization of gate appearances and behaviors.
+- Sequential logic components (e.g. latches, flip-flops)
+    - with timing? :O
