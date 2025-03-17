@@ -42,9 +42,11 @@ class Wire(Line):
         self.connected_gate_output = gate
 
 class Net(Group):
-    def __init__(self):
+    def __init__(self, *wires):
         super().__init__()
         self.wires = []
+        for wire in wires:
+            self.add_wire(wire)
 
     def add_wire(self, wire):
         if not isinstance(wire, Wire):

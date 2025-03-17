@@ -9,8 +9,6 @@ A Manim library that implements combinational and sequential digital logic compo
 
 # Docs
 
-## Class Hierarchy
-
 - **Wire** (inherits from `Line`)
   - Represents a circuit wire with a logical state (0 or 1) and visual appearance (white for 0, red for 1).
   - Tracks whether it’s connected as a gate input or output.
@@ -19,11 +17,13 @@ A Manim library that implements combinational and sequential digital logic compo
   - Handles state propagation across wires within the net.
 - **Gate** (abstract base, inherits from `Group`)
   - Provides common functionality for logic gates including attaching wires, animating creation/uncreation, and cascading state propagation.
-  - Child classes: **AndGate**, **OrGate**.
+  - Child classes: **AndGate**, **OrGate**, **NotGate**.
 - **AndGate** (inherits from `Gate`)
   - Implements an AND gate: the output is high only when all input wires are high.
 - **OrGate** (inherits from `Gate`)
   - Implements an OR gate: the output is high when any input wire is high.
+- **NotGate** (inherits from `Gate`)
+  - Implements a NOT gate: the output is the inversion of the single input wire’s state.
 
 ## Key Functions and Arguments
 
@@ -80,16 +80,19 @@ A Manim library that implements combinational and sequential digital logic compo
   - `create()`: Returns Create animations for the gate’s components plus attached wires.
   - `propagate()`: Implements the OR logic—output is high if any input wire is high.
 
+### NotGate (inherits from Gate)
+- **Constructor**:  
+  `NotGate(label="NOT")`
+- **Additional Attributes**:  
+  Uses a triangle and a circle (inversion bubble) to represent the NOT gate.
+  - Defines an input point (typically on the left) and an output point (at the inversion bubble).
+- **Methods**:
+  - `create()`: Returns Create animations for the NOT gate’s components plus attached wires.
+  - `propagate()`: Implements the NOT logic—output is the inversion of its single input wire’s state.
+
 ---
 
-## GIF Demonstrations
-- **GIF 1**: _[Insert GIF of Wire creation and state propagation]_  
-- **GIF 2**: _[Insert GIF of Net propagating state across wires]_  
-- **GIF 3**: _[Insert GIF of Gate (AND/OR) animation with logic propagation]_
-
----
-
-## Future Enhancements
+## Future Additions
 - Additional gate types (e.g., XOR, NAND, NOR).
 - Extended logic propagation through complex circuits.
 - Customization of gate appearances and behaviors.
