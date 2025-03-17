@@ -9,7 +9,7 @@ https://github.com/user-attachments/assets/fcfd61ef-fd94-423b-a332-e7529de6cb7c
 - Install Manim (Community Version): https://docs.manim.community/en/stable/installation.html
     - Note: LaTeX modules will take a while to install, and are not required for this library.
     - On Mac, pipx is recommended.
-- Run `manim -pqh examples.py` in examples/ to render the video in high quality (-qh), and instantly play back (-p)
+- Run `manim -pqh example.py` in examples/ to render the video in high quality (-qh), and instantly play back (-p)
 
 # Docs
 
@@ -93,6 +93,71 @@ https://github.com/user-attachments/assets/fcfd61ef-fd94-423b-a332-e7529de6cb7c
 - **Methods**:
   - `create()`: Returns Create animations for the NOT gate’s components plus attached wires.
   - `propagate()`: Implements the NOT logic—output is the inversion of its single input wire’s state.
+
+---
+
+## Typical Workflow
+
+- Create a manim `Scene` for each video clip (all your code must go within `construct()`):
+
+```python
+class ExampleScene(Scene):
+    def construct(self):
+```
+
+- Create gate objects and shift them into position:
+
+```python
+and_gate = AndGate(label="AND").shift([-4, -1, 0])
+```
+
+- Create wires and attach them to the gate:
+
+```python
+and_i_1 = Wire(start=[-1, 0, 0], end=and_gate.get_input_a(), abs_end=True)
+and_i_2 = Wire(start=[-1, 0, 0], end=and_gate.get_input_b(), abs_end=True)
+and_o = Wire(start=and_gate.get_output(), end=[1, 0, 0], abs_end=False)
+```
+
+- Attach wires to gate:
+
+```python
+and_gate.add_input_wire(and_i_1)
+and_gate.add_input_wire(and_i_2)
+and_gate.add_output_wire(and_o)
+```
+
+- Add wires to net so logic propagation can happen to all wires in net:
+
+```python
+and_i_1_w = Net(and_i_1)
+and_i_2_w = Net(and_i_2)
+and_o_w = Net(and_o)
+```
+
+- Animate the creation of the gate (which automatically creates the wires we attached earlier):
+
+```python
+self.play(and_gate.create()) # .create() functions return a list of Animations 
+                             # that must be played using Scene.play()
+```
+
+- Set the state of your wires and propagate them through:
+
+```python
+and_i_1.set_state(1)
+and_i_2.set_state(0)
+and_i_1_w.propagate_through(and_i_1)
+self.wait(1)
+```
+
+- Animate the "uncreation" of the gate (which automatically uncreates the wires we attached earlier)
+
+```python
+self.play(and_gate.uncreate())
+self.wait(0.75) # manim is greedy with the animation cut-off point;
+                # make sure you pause at the end of every animation
+```
 
 ---
 
