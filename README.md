@@ -1,6 +1,10 @@
 # manim-digital
 A Manim library that implements combinational and sequential digital logic components. It provides classes to represent wires, nets (groups of wires), and logic gates (such as AND and OR). The library supports state propagation and dynamic animations of connected components. Inspired by Daniel Wu's [LogicGates.py](https://github.com/Daniel20010822/Manim-animation/blob/main/LogicGates.py).
 
+
+https://github.com/user-attachments/assets/fcfd61ef-fd94-423b-a332-e7529de6cb7c
+
+
 ## Getting Started
 - Install Manim (Community Version): https://docs.manim.community/en/stable/installation.html
     - Note: LaTeX modules will take a while to install, and are not required for this library.
