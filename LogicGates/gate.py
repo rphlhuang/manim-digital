@@ -4,7 +4,7 @@ class Gate(Group):
     def __init__(self, label=""):
         super().__init__()
         self.label = label
-        self.text = Text(label).shift(DOWN * 2)
+        self.text = Text(label, font="sans-serif").shift(DOWN * 2)
         self.input_wires = []  # list to track input wires
         self.output_wire = None  # single output wire
 
