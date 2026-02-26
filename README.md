@@ -1,5 +1,5 @@
 # manim-digital
-A Manim library that implements combinational and sequential digital logic components. It provides classes to represent wires, nets (groups of wires), and logic gates (such as AND and OR). The library supports state propagation and dynamic animations of connected components. Inspired by Daniel Wu's [LogicGates.py](https://github.com/Daniel20010822/Manim-animation/blob/main/LogicGates.py).
+A Manim library that implements combinational and sequential digital logic components, tailored for creating explainer animations for introductory logic design courses. It provides classes to represent wires, nets (groups of wires), logic gates (such as AND, OR, NOT), and sequential components (D-FlipFlop). The library supports state propagation and dynamic animations of connected components, and will soon handle automatic structural Verilog ingestion and simulated Waveform visualization. Inspired by Daniel Wu's [LogicGates.py](https://github.com/Daniel20010822/Manim-animation/blob/main/LogicGates.py).
 
 
 https://github.com/user-attachments/assets/fcfd61ef-fd94-423b-a332-e7529de6cb7c
@@ -94,6 +94,15 @@ https://github.com/user-attachments/assets/fcfd61ef-fd94-423b-a332-e7529de6cb7c
   - `create()`: Returns Create animations for the NOT gate’s components plus attached wires.
   - `propagate()`: Implements the NOT logic—output is the inversion of its single input wire’s state.
 
+### DFlipFlop (inherits from Gate)
+- **Constructor**:  
+  `DFlipFlop(label="DFF")`
+- **Additional Attributes**:  
+  Uses a rectangle with a clock triangle edge-trigger indicator.
+- **Methods**:
+  - `create()`: Returns Create animations for the D Flip-Flop.
+  - `propagate()`: Implements positive edge-triggered D-FlipFlop behavior (updates Q on rising CLK edge).
+
 ---
 
 ## Typical Workflow
@@ -157,6 +166,45 @@ self.wait(1)
 self.play(and_gate.uncreate())
 self.wait(0.75) # manim is greedy with the animation cut-off point;
                 # make sure you pause at the end of every animation
+```
+
+---
+
+## Verilog Parsing Workflows
+
+`manim-digital` provides a `VerilogParser` capable of ingesting structural `.v` / `.sv` files and compiling SystemVerilog to VCD Waveform outputs via `simulate_verilog`.
+
+Due to spatial complexities and aesthetic control in Manim, the parser provides three distinct workflows:
+
+### 1. Programmatic Layout (Recommended)
+This flow lets the animator manually position auto-generated gates before the parser auto-routes the wires between them.
+```python
+parser = VerilogParser("latch.v")
+gates = parser.generate_gates()
+
+# Manually distribute gates spatially for visual clarity
+gates['g1'].move_to(UP * 1.5 + LEFT * 2)
+gates['g2'].move_to(DOWN * 1.5 + RIGHT * 2)
+
+# Automatically generate Multi-segment Wires between ports
+circuit_group = parser.route_wires()
+self.play(*parser.create())
+```
+
+### 2. Auto Layout
+Best for very simple, cascade logic without feedback loops. Evaluates a topological sort and positions gates automatically.
+```python
+parser = VerilogParser("basic.v")
+circuit = parser.auto_layout()
+self.play(*parser.create())
+```
+
+### 3. Code Generation (Max Control)
+Dumps a fully typed Python/Manim script defining the structural implementation. The animator can copy-paste the output and tweak every specific coordinate, color, and wire.
+```python
+parser = VerilogParser("latch.v")
+parser.auto_layout()
+parser.generate_manim_code(output_path="latch_scene.py")
 ```
 
 ---

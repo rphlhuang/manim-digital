@@ -1,7 +1,7 @@
 # manim-digital: Agent Summary & TODOs
 
 ## Project Summary
-`manim-digital` is a library built on top of Manim (Community Version) that implements combinational and sequential digital logic components for animations. It provides foundational classes like `Wire` (for logical paths), `Net` (for grouping and propagating state across connected wires), and `Gate` hierarchies (currently supporting `AndGate`, `OrGate`, and `NotGate`). 
+`manim-digital` is a library built on top of Manim (Community Version) designed specifically to create beautiful, dynamic explainer animations for introductory logic design courses. It implements both combinational and sequential digital logic components. It provides foundational classes like `Wire` (for logical paths), `Net` (for grouping and propagating state across connected wires), and `Gate` hierarchies (currently supporting combinational gates like `AndGate`, `OrGate`, `NotGate`, and sequential blocks like `DFlipFlop`). 
 The library's main feature is allowing users to intuitively stitch together logic gates, animate their creation/uncreation, and propagate logical states (1 being HIGH/red, 0 being LOW/white) dynamically through the visual circuit during the animation.
 
 ## Refactoring Ideas
@@ -13,5 +13,7 @@ The library's main feature is allowing users to intuitively stitch together logi
 - [ ] Implement additional foundational combinational gates (NAND, NOR, XOR, XNOR).
 - [ ] Refactor the connection system to use explicit `InputPort` and `OutputPort` classes instead of directly binding `Wire` to `Gate`.
 - [ ] Implement an automatic, reactive state propagation system so users don't have to manually propagate state changes.
-- [ ] Add basic sequential logic components (e.g., D-Flip-Flop, SR-Latch, Clock signal generator).
+- [ ] Add basic sequential logic components (e.g., SR-Latch, Clock signal generator) - *D-FlipFlop complete*.
+- [ ] Implement a structural Verilog parser to automatically generate diagram animations from SystemVerilog.
+- [ ] Implement a VCD waveform parser using `iverilog` to synchronize diagrams with real simulation results.
 - [ ] Create a `Circuit` wrapper class to streamline Manim animation generation (e.g., auto-grouping and ordering component animations).
